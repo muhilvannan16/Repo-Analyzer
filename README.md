@@ -49,3 +49,7 @@ uvicorn main:app --reload
 ## License
 
 Apache License 2.0
+
+## Author
+
+**Muhil** ([@muhilvannan16](https://github.com/muhilvannan16))
