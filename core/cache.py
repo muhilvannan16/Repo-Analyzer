@@ -3,8 +3,8 @@ import json
 from datetime import datetime, timezone
 
 
-def init_db():
-    conn = sqlite3.connect("cache.db")
+def init_db(db_path="cache.db"):
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS repo_cache (
@@ -20,8 +20,8 @@ def init_db():
     conn.commit()
     conn.close()
 
-def get_cached_repo(repo_full_name):
-    conn = sqlite3.connect("cache.db")
+def get_cached_repo(repo_full_name, db_path="cache.db"):
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(
         "SELECT metadata, commits, issues, releases, readme_status, cached_at FROM repo_cache WHERE repo_full_name = ?",
@@ -50,8 +50,8 @@ def get_cached_repo(repo_full_name):
     else:
         return None
 
-def save_to_cache(repo_full_name, metadata, commits, issues, releases, readme_status):
-    conn = sqlite3.connect("cache.db")
+def save_to_cache(repo_full_name, metadata, commits, issues, releases, readme_status, db_path="cache.db"):
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     now = datetime.now(timezone.utc)
