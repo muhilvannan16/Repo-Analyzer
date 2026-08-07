@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repo Analyzer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f5f6f8;
+    color: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+  }
+
+  /* --- Search bar --- */
+  .search-bar {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    max-width: 560px;
+    margin-bottom: 32px;
+  }
+
+  .search-bar input {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    border: 1.5px solid #d0d5dd;
+    border-radius: 10px;
+    outline: none;
+    background: #fff;
+    transition: border-color 0.15s;
+  }
+
+  .search-bar input:focus { border-color: #4f6ef7; }
+
+  .search-bar button {
+    padding: 12px 24px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    background: #4f6ef7;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+
+  .search-bar button:hover { background: #3b57d9; }
+  .search-bar button:disabled { background: #a4b3f5; cursor: not-allowed; }
+
+  /* --- Loading --- */
+  .loader {
+    display: none;
+    margin: 40px 0;
+    text-align: center;
+    color: #667;
+    font-size: 0.95rem;
+  }
+
+  .loader .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e0e0e0;
+    border-top-color: #4f6ef7;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* --- Error --- */
+  .error-msg {
+    display: none;
+    max-width: 560px;
+    width: 100%;
+    padding: 14px 18px;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 10px;
+    color: #b91c1c;
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+    line-height: 1.45;
+  }
+
+  /* --- Results --- */
+  .results {
+    display: none;
+    width: 100%;
+    max-width: 860px;
+  }
+
+  .results-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .repo-name {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+  }
+
+  .total-score {
+    font-size: 2.8rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .total-score span { color: #888; font-weight: 400; font-size: 1.4rem; }
+
+  /* --- Cards --- */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 700px) {
+    .cards { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .card-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-bottom: 4px;
+  }
+
+  .card-subtotal {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .card-subtotal span { color: #aaa; font-weight: 400; font-size: 0.95rem; }
+
+  /* --- Signal rows --- */
+  .signal {
+    margin-bottom: 14px;
+  }
+
+  .signal:last-child { margin-bottom: 0; }
+
+  .signal-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    margin-bottom: 5px;
+    color: #555;
+  }
+
+  .signal-label .score-text { font-weight: 600; color: #333; }
+
+  .bar-track {
+    width: 100%;
+    height: 8px;
+    background: #eef0f4;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  .bar-green  { background: #22c55e; }
+  .bar-amber  { background: #f59e0b; }
+  .bar-red    { background: #ef4444; }
+</style>
+</head>
+<body>
+
+<h1>Repo Analyzer</h1>
+
+<div class="search-bar">
+  <input type="text" id="repoInput" placeholder="https://github.com/owner/repo" />
+  <button id="analyzeBtn">Analyze</button>
+</div>
+
+<div class="error-msg" id="errorMsg"></div>
+
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  Analyzing repository…
+</div>
+
+<div class="results" id="results">
+  <div class="results-header">
+    <div class="repo-name" id="repoName"></div>
+    <div class="total-score" id="totalScore"></div>
+  </div>
+  <div class="cards">
+    <div class="card" id="cardCommits">
+      <div class="card-title">Commits</div>
+      <div class="card-subtotal" id="subtotalCommits"></div>
+      <div id="signalsCommits"></div>
+    </div>
+    <div class="card" id="cardIssues">
+      <div class="card-title">Issues</div>
+      <div class="card-subtotal" id="subtotalIssues"></div>
+      <div id="signalsIssues"></div>
+    </div>
+    <div class="card" id="cardMetadata">
+      <div class="card-title">Metadata</div>
+      <div class="card-subtotal" id="subtotalMetadata"></div>
+      <div id="signalsMetadata"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CARDS = {
+    commits: {
+      subtotalEl: "subtotalCommits",
+      signalsEl: "signalsCommits",
+      signals: [
+        { key: "recency",   label: "Recency",   max: 13 },
+        { key: "frequency", label: "Frequency", max: 12 },
+        { key: "momentum",  label: "Momentum",  max: 8  },
+      ]
+    },
+    issues: {
+      subtotalEl: "subtotalIssues",
+      signalsEl: "signalsIssues",
+      signals: [
+        { key: "issue_engagement", label: "Engagement",      max: 10 },
+        { key: "resolution_rate",  label: "Resolution rate", max: 13 },
+        { key: "time_to_close",    label: "Time to close",   max: 10 },
+      ]
+    },
+    metadata: {
+      subtotalEl: "subtotalMetadata",
+      signalsEl: "signalsMetadata",
+      signals: [
+        { key: "fork_ratio",      label: "Fork ratio",       max: 11 },
+        { key: "license",         label: "License",          max: 6  },
+        { key: "recent_releases", label: "Recent releases",  max: 11 },
+        { key: "readme",          label: "Readme",           max: 6  },
+      ]
+    }
+  };
+
+  function barColor(score, max) {
+    const pct = score / max;
+    if (pct >= 0.7) return "bar-green";
+    if (pct >= 0.4) return "bar-amber";
+    return "bar-red";
+  }
+
+  function renderSignal(container, label, score, max) {
+    const pct = Math.round((score / max) * 100);
+    const color = barColor(score, max);
+    const div = document.createElement("div");
+    div.className = "signal";
+    div.innerHTML = `
+      <div class="signal-label">
+        <span>${label}</span>
+        <span class="score-text">${score} / ${max}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill ${color}" style="width: ${pct}%"></div>
+      </div>`;
+    container.appendChild(div);
+  }
+
+  function showResults(data) {
+    const b = data.breakdown;
+
+    document.getElementById("repoName").textContent = data.owner + " / " + data.repo;
+    document.getElementById("totalScore").innerHTML = data.total_score + " <span>/ 100</span>";
+
+    for (const [, card] of Object.entries(CARDS)) {
+      const container = document.getElementById(card.signalsEl);
+      container.innerHTML = "";
+      let subtotal = 0;
+      let subtotalMax = 0;
+      for (const s of card.signals) {
+        const score = b[s.key] ?? 0;
+        subtotal += score;
+        subtotalMax += s.max;
+        renderSignal(container, s.label, score, s.max);
+      }
+      document.getElementById(card.subtotalEl).innerHTML = subtotal + " <span>/ " + subtotalMax + "</span>";
+    }
+
+    document.getElementById("results").style.display = "block";
+  }
+
+  async function analyze() {
+    const input = document.getElementById("repoInput");
+    const btn = document.getElementById("analyzeBtn");
+    const loader = document.getElementById("loader");
+    const errorEl = document.getElementById("errorMsg");
+    const resultsEl = document.getElementById("results");
+
+    const url = input.value.trim();
+    if (!url) { input.focus(); return; }
+
+    // Reset UI
+    errorEl.style.display = "none";
+    resultsEl.style.display = "none";
+    loader.style.display = "block";
+    btn.disabled = true;
+
+    try {
+      const res = await fetch("/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repo_url: url })
+      });
+
+      if (!res.ok) {
+        let msg = "Something went wrong (HTTP " + res.status + ")";
+        try {
+          const body = await res.json();
+          if (body.detail) msg = body.detail;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      const data = await res.json();
+      showResults(data);
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.style.display = "block";
+    } finally {
+      loader.style.display = "none";
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById("analyzeBtn").addEventListener("click", analyze);
+  document.getElementById("repoInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") analyze();
+  });
+</script>
+
+</body>
+</html>

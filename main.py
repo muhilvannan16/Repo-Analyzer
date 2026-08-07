@@ -18,6 +18,9 @@ from core import (
     get_cached_repo,
     save_to_cache,
 )
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
 
 app = FastAPI()
 init_db()  # ensures the table exists before any requests come in
@@ -25,9 +28,11 @@ init_db()  # ensures the table exists before any requests come in
 token = os.environ.get("GITHUB_TOKEN")
 headers = {"Authorization": f"Bearer {token}"}
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 @app.get("/")
 def read_root():
-    return {"message": "hello"}
+    return FileResponse("static/index.html")
 
 class RepoRequest(BaseModel):
     repo_url: str
