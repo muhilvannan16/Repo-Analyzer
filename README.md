@@ -14,10 +14,6 @@
 
 Paste any public GitHub repo URL, and get back a health score out of 100 — broken down across three categories, ten individual signals, all computed from live data pulled directly from GitHub's API.
 
-<!-- Optional: drop a screenshot of the app here once you have one
-![Repo Analyzer screenshot](docs/screenshot.png)
--->
-
 ## How the score works
 
 **🔨 Commits — 33 points**
@@ -50,6 +46,7 @@ Repos with too little data for a signal to be meaningful (e.g. very few stars, v
 - **Frontend:** HTML, CSS, and vanilla JavaScript — no framework
 - **Testing:** pytest, 82 tests covering scoring logic, caching, and API endpoints
 - **CI/CD:** GitHub Actions (automated tests + Claude-powered PR review)
+- **Containerization:** Docker
 - **Deployment:** Render
 
 ## Running it locally
@@ -70,8 +67,19 @@ uvicorn main:app --reload
 
 5. Visit `http://127.0.0.1:8000` in your browser
 
+## Running with Docker
+
+docker build -t repo-analyzer .
+docker run -p 8000:8000 -e GITHUB_TOKEN=<your_token> repo-analyzer
+
+
+Then visit `http://localhost:8000`.
+
 ## Running the tests
 
+Tests require a couple of extra dev-only dependencies not included in the base `requirements.txt`:
+
+pip install -r requirements-dev.txt
 pytest
 
 
