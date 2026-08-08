@@ -26,6 +26,8 @@ app = FastAPI()
 init_db()  # ensures the table exists before any requests come in
 
 token = os.environ.get("GITHUB_TOKEN")
+if not token:
+    raise RuntimeError("GITHUB_TOKEN environment variable is not set. Set it before starting the server.")
 headers = {"Authorization": f"Bearer {token}"}
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -45,6 +47,13 @@ def analyze_repo(request: RepoRequest):
 
     owner = parts[-2]
     repo = parts[-1]
+    
+    repo = repo.split("?")[0].split("#")[0]
+    if repo.endswith(".git"):
+        repo = repo[:-4]
+    if not repo:
+        raise HTTPException(status_code=400, detail="Invalid repository URL")
+    
     repo_key = f"{owner}/{repo}"
 
     cached = get_cached_repo(repo_key)
@@ -63,21 +72,21 @@ def analyze_repo(request: RepoRequest):
             raise HTTPException(status_code=429, detail="GitHub rate limit exceeded, try again later")
         metadata = metadata_response.json()
 
-        commits_response = requests.get(f"https://api.github.com/repos/{owner}/{repo}/commits", headers=headers)
+        commits_response = requests.get(f"https://api.github.com/repos/{owner}/{repo}/commits?per_page=100", headers=headers)
         if commits_response.status_code == 404:
             raise HTTPException(status_code=404, detail="Commits not found")
         if commits_response.status_code == 403:
             raise HTTPException(status_code=429, detail="GitHub rate limit exceeded, try again later")
         commits = commits_response.json()
 
-        issues_response = requests.get(f"https://api.github.com/repos/{owner}/{repo}/issues?state=all", headers=headers)
+        issues_response = requests.get(f"https://api.github.com/repos/{owner}/{repo}/issues?state=all&per_page=100", headers=headers)
         if issues_response.status_code == 404:
             raise HTTPException(status_code=404, detail="Issues not found")
         if issues_response.status_code == 403:
             raise HTTPException(status_code=429, detail="GitHub rate limit exceeded, try again later")
         issues = issues_response.json()
 
-        releases_response = requests.get(f"https://api.github.com/repos/{owner}/{repo}/releases", headers=headers)
+        releases_response = requests.get(f"https://api.github.com/repos/{owner}/{repo}/releases?per_page=100", headers=headers)
         if releases_response.status_code == 404:
             raise HTTPException(status_code=404, detail="Releases not found")
         if releases_response.status_code == 403:
