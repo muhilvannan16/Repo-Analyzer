@@ -1,6 +1,12 @@
-# 🔍 GitHub Repo Analyzer
+# 🔍 GitHub Repo Analyzer — Automated Repository Health Scoring
 
-**A full-stack tool that scores any public GitHub repository's health — from 0 to 100 — based on real commit activity, issue responsiveness, and project hygiene.**
+**GitHub Repo Analyzer** is a full-stack tool that computes a 0–100 health score for any public GitHub repository, based on real commit activity, issue responsiveness, and project hygiene — computed live from GitHub's own API, not surface-level stats like stars alone.
+
+[![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 
 [![Tests](https://github.com/muhilvannan16/Repo-Analyzer/actions/workflows/tests.yml/badge.svg)](https://github.com/muhilvannan16/Repo-Analyzer/actions/workflows/tests.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
@@ -10,24 +16,31 @@
 
 ---
 
-## What it does
+## ✨ Key Features
 
-Paste any public GitHub repo URL, and get back a health score out of 100 — broken down across three categories, ten individual signals, all computed from live data pulled directly from GitHub's API.
+- **Ten-Signal Scoring Engine**: Every score is broken into three categories — Commits, Issues, and Metadata — each built from multiple individually-designed signals, not a single generic metric.
+- **Real API Data**: Every signal is computed live from GitHub's REST API at request time, not cached surface stats.
+- **Fair to Small Projects**: Repos with too little data for a signal to be meaningful (few stars, few commits, no issues) get a neutral score instead of being unfairly penalized.
+- **Smart Caching**: Results are cached in SQLite for one hour, so repeat lookups are near-instant without hammering GitHub's rate limit.
+- **Fully Tested**: 82 pytest tests cover the scoring engine, caching layer, and every API endpoint.
+- **Production-Ready**: Hardened error handling, Docker support, and automated CI/CD with Claude-powered PR review.
 
-## How the score works
+---
+
+## 📊 How the Score Works
 
 **🔨 Commits — 33 points**
 | Signal | What it measures |
 |---|---|
 | Recency | How recently the repo was last pushed to |
-| Frequency | How consistently commits happen over time (measured via standard deviation of gaps) |
-| Momentum | Whether commit activity is accelerating or slowing down recently |
+| Frequency | How consistently commits happen over time |
+| Momentum | Whether commit activity is accelerating or slowing down |
 
 **💬 Issues — 33 points**
 | Signal | What it measures |
 |---|---|
 | Engagement | Average comments per issue |
-| Resolution rate | Share of issues that get genuinely completed, not just closed |
+| Resolution rate | Share of issues genuinely completed, not just closed |
 | Time to close | How quickly completed issues get resolved |
 
 **📄 Metadata — 34 points**
@@ -38,55 +51,56 @@ Paste any public GitHub repo URL, and get back a health score out of 100 — bro
 | Recent releases | How recently a formal GitHub Release was published |
 | README | Whether one exists |
 
-Repos with too little data for a signal to be meaningful (e.g. very few stars, very few commits) get a neutral score for that signal rather than being unfairly penalized — see the full scoring logic in [`core/scoring.py`](./core/scoring.py).
+Full scoring logic: [`core/scoring.py`](./core/scoring.py)
 
-## Tech stack
+---
 
-- **Backend:** Python, FastAPI, SQLite (1-hour result caching)
-- **Frontend:** HTML, CSS, and vanilla JavaScript — no framework
-- **Testing:** pytest, 82 tests covering scoring logic, caching, and API endpoints
-- **CI/CD:** GitHub Actions (automated tests + Claude-powered PR review)
-- **Containerization:** Docker
-- **Deployment:** Render
+## 🛠️ Built With
 
-## Running it locally
+- **Backend**: Python, FastAPI, SQLite (1-hour result caching)
+- **Frontend**: Pure HTML5, CSS3, Vanilla JavaScript (ES6+) — no framework
+- **Testing**: pytest, 82 tests covering scoring, caching, and API endpoints
+- **CI/CD**: GitHub Actions (automated tests + Claude-powered PR review)
+- **Containerization**: Docker, non-root user, split runtime/dev dependencies
 
-1. Clone the repo and create a virtual environment:
+---
+
+## 🚀 Getting Started
+
+**Run locally:**
 
 python -m venv venv
 venv\Scripts\activate
-
-2. Install dependencies:
-
 pip install -r requirements.txt
 
-3. Set a `GITHUB_TOKEN` environment variable (a fine-grained personal access token with "Public Repositories (read-only)" access works)
-4. Run the server:
+Set a `GITHUB_TOKEN` environment variable, then:
 
 uvicorn main:app --reload
 
-5. Visit `http://127.0.0.1:8000` in your browser
+Visit `http://127.0.0.1:8000`.
 
-## Running with Docker
+**Run with Docker:**
 
 docker build -t repo-analyzer -f docker/Dockerfile .
 docker run -p 8000:8000 -e GITHUB_TOKEN=<your_token> repo-analyzer
 
 
-Then visit `http://localhost:8000`.
-
-## Running the tests
-
-Tests require a couple of extra dev-only dependencies not included in the base `requirements.txt`:
+**Run the tests:**
 
 pip install -r requirements-dev.txt
 pytest
 
 
-## License
+---
+
+## 📄 License
+
+[#-license](#-license)
 
 Apache License 2.0
 
-## Author
+---
+
+## 👤 Author
 
 **Muhil** ([@muhilvannan16](https://github.com/muhilvannan16))
