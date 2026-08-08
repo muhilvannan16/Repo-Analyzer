@@ -69,7 +69,7 @@ uvicorn main:app --reload
 
 ## Running with Docker
 
-docker build -t repo-analyzer .
+docker build -t repo-analyzer -f docker/Dockerfile .
 docker run -p 8000:8000 -e GITHUB_TOKEN=<your_token> repo-analyzer
 
 
