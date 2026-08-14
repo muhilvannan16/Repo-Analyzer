@@ -15,6 +15,7 @@
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://repo-analyzer-ts4d.onrender.com)
 
 🔗 **[Try it live →](https://repo-analyzer-ts4d.onrender.com)**
+⭐ **If you find this project useful or interesting, consider giving it a star — it helps others discover it too.**
 
 ---
 
